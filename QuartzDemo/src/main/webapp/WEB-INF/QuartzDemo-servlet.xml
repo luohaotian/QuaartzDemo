@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- 注册注解驱动特性 -->
+    <mvc:annotation-driven  />
+
+    <!-- 开启注解装配 -->
+    <context:annotation-config />
+    <!-- 扫描注解 -->
+    <context:component-scan base-package="cn.nexuslink.quartzDemo" />
+
+    <aop:aspectj-autoproxy proxy-target-class="true" />
+
+    <bean id="test1JobDetail" class="org.springframework.scheduling.quartz.JobDetailFactoryBean"
+          p:jobClass="cn.nexuslink.quartzDemo.jobBean.JobTest1"
+          p:durability="true"/>
+    <bean id="test2JobTail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean"
+          p:targetObject-ref="job2"
+          p:targetMethod="execute"
+          p:concurrent="false"/>
+    <bean id="job2" class="cn.nexuslink.quartzDemo.jobBean.JobTest2"/>
+
+    <!--SimpleTrigger延迟一秒启动，时间间隔为2秒-->
+    <bean id="jobTest1SimpleTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean"
+          p:jobDetail-ref="test1JobDetail"
+          p:startDelay="1000"
+          p:repeatInterval="2000"
+          p:repeatCount="100"/>
+
+    <!--CronTrigger从每分钟的第一秒开始执行，然后每隔5秒执行一次-->
+    <bean id="jobTest2CronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean"
+          p:jobDetail-ref="test2JobTail"
+          p:cronExpression="0/5 * * * * ? "/>
+
+
+    <!--<bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean"-->
+    <!--p:triggers-ref="jobTest1SimpleTrigger"/>-->
+    <bean name="startQuartz" lazy-init="false" autowire="no" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <ref bean="jobTest1SimpleTrigger"/>
+                <ref bean="jobTest2CronTrigger"/>
+            </list>
+        </property>
+    </bean>
+
+</beans>
